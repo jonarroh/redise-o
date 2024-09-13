@@ -5,7 +5,7 @@ import Typography from '../components/Typography';
 // Obtén la cookie en el contexto de servidor
 const userPreferenceCookie = Astro.cookies.get('userPreference')?.value; // Extrae el valor de la cookie como cadena
 let initialFontSize = 16; // Valor predeterminado
-
+console.log('userPreferenceCookie:', userPreferenceCookie);
 if (userPreferenceCookie) {
   try {
     const userPreference = JSON.parse(userPreferenceCookie);
@@ -29,7 +29,7 @@ if (userPreferenceCookie) {
     <title>{Astro.props.title}</title>
   </head>
   <body class="text-white">
-    <Typography initialFontSize={initialFontSize as any} client:idle>
+    <Typography initialFontSize={initialFontSize as any} client:idle as="h1">
       asd
     </Typography>
 		<FontSizeSelector/ client:idle>

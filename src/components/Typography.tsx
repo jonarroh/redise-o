@@ -1,81 +1,65 @@
-// Importa las dependencias necesarias
-import { useEffect, useState } from 'react';
-import { persistentAtom } from '@nanostores/persistent';
-import Cookies from 'js-cookie';
+// src/components/Typography.tsx
+import React, { useEffect, useState } from 'react';
+import { useStore } from '@nanostores/react'; // Usa el hook para suscribirte al store de Nanostores
+import { fontSizeStore, type FontSize } from '../store/usabilityStore'; // Importa el store de tamaños de fuente
 
-// Define los tipos permitidos para fontSize
-export type FontSize = 16 | 18 | 20 | 24 | 32;
+// Definir los tipos permitidos para el prop `as`
+type TypographyElement = 'h1' | 'h2' | 'h3' | 'p' | 'span' | 'strong';
 
-// Crear un atom persistente para almacenar el tamaño de la fuente en cookies
-export const fontSizeStore = persistentAtom<FontSize>('fontSize', 16, {
-  encode(value) {
-    return JSON.stringify(value);
-  },
-  decode(value) {
-    try {
-      return JSON.parse(value) as FontSize;
-    } catch (e) {
-      return 16; // Valor predeterminado en caso de error
-    }
-  },
-});
-
-fontSizeStore.subscribe((value) => {
-  const userPreferenceCookie = Cookies.get('userPreference');
-  let userPreference = { theme: 'light', fontSize: 16 }; // Valores por defecto
-
-  if (userPreferenceCookie) {
-    try {
-      userPreference = JSON.parse(userPreferenceCookie);
-    } catch (e) {
-      console.error('Error al parsear la cookie userPreference:', e);
-    }
-  }
-
-  userPreference.fontSize = value;
-  Cookies.set('userPreference', JSON.stringify(userPreference), { expires: 365 });
-});
-
-// Define las propiedades que el componente acepta
 interface TypographyProps {
-  initialFontSize: FontSize;
+  as?: TypographyElement;
+  className?: string;
+  children: React.ReactNode;
+  initialFontSize: FontSize; // Prop para el tamaño de fuente inicial
 }
 
-const Typography = ({ initialFontSize }: TypographyProps) => {
-  // Inicializa el estado con el valor recibido como prop
-  const [fontSize, setFontSize] = useState<FontSize>(initialFontSize);
+const Typography: React.FC<TypographyProps> = ({ as = 'p', className = '', children, initialFontSize }) => {
+  const baseSize = useStore(fontSizeStore);
+  const [size, setSize] = useState<number>(initialFontSize);
 
-  // Sincroniza el store con el valor inicial
+  // Efecto para establecer el tamaño inicial y actualizar el tamaño del store
   useEffect(() => {
-    fontSizeStore.set(initialFontSize);
-  }, [initialFontSize]);
+    setSize(baseSize);
+  }, [initialFontSize, baseSize]);
 
-  // Efecto secundario para actualizar la cookie cuando el valor cambia
-  useEffect(() => {
-    const unsubscribe = fontSizeStore.subscribe((value) => {
-      const userPreferenceCookie = Cookies.get('userPreference');
-      let userPreference = { theme: 'light', fontSize: 16 }; // Valores por defecto
+  // Definir tamaños base en píxeles
+  const baseSizeInPixels = `${size}px`;
+  const baseClasses = {
+    h1: {
+      fontSize: `${size + 24}px`,
+      fontWeight: 'bold',
+    },
+    h2: {
+      fontSize: `${size + 16}px`,
+      fontWeight: '600',
+    },
+    h3: {
+      fontSize: `${size + 8}px`,
+      fontWeight: '500',
+    },
+    p: {
+      fontSize: baseSizeInPixels,
+    },
+    span: {
+      fontSize: `${size - 4}px`,
+    },
+    strong: {
+      fontSize: baseSizeInPixels,
+      fontWeight: 'bold',
+    },
+  }[as || 'p']; // Fallback a párrafo si no se especifica
 
-      if (userPreferenceCookie) {
-        try {
-          userPreference = JSON.parse(userPreferenceCookie);
-        } catch (e) {
-          console.error('Error al parsear la cookie userPreference:', e);
-        }
-      }
-
-      // Actualiza el tamaño de fuente en la cookie 'userPreference'
-      userPreference.fontSize = value;
-      Cookies.set('userPreference', JSON.stringify(userPreference), { expires: 365 });
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // Aplicar el tamaño base global y las clases específicas
+  const Component = as;
 
   return (
-    <div>
-      <h1>El font-size actual es: {fontSize}</h1>
-    </div>
+    <Component
+      className={className}
+      style={baseClasses} // Aplicar estilos en línea
+    >
+      {"el font-size actual es: " + size}
+      {children}
+    </Component>
   );
 };
 
