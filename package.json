@@ -7,23 +7,37 @@
     "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "preview:build": "bunx wrangler pages dev ./dist",
+    "astro": "astro",
+    "deploy": "bunx wrangler pages publish ./dist",
+    "generate": "bunx drizzle-kit generate",
+    "migrate": "bunx drizzle-kit migrate",
+    "push": "bunx drizzle-kit push"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.3",
+    "@astrojs/cloudflare": "^11.0.4",
     "@astrojs/react": "^3.6.2",
     "@astrojs/tailwind": "^5.1.0",
+    "@libsql/client": "^0.11.0",
     "@nanostores/persistent": "^0.10.2",
     "@nanostores/react": "^0.7.3",
     "@types/js-cookie": "^3.0.6",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "astro": "^4.15.4",
+    "astro-service-worker": "^0.1.2",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.33.0",
     "js-cookie": "^3.0.5",
     "nanostores": "^0.11.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.11",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "wrangler": "^3.77.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.24.2"
   }
 }

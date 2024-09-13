@@ -1,61 +1,81 @@
-import React, { useEffect } from 'react';
-import { useStore } from '@nanostores/react'; // Usa el hook para suscribirte al store de Nanostores
-import { fontSizeStore } from '../store/usabilityStore'; // Importa el store de tamaños de fuente
+// Importa las dependencias necesarias
+import { useEffect, useState } from 'react';
+import { persistentAtom } from '@nanostores/persistent';
+import Cookies from 'js-cookie';
 
-// Definir los tipos permitidos para el prop `as`
-type TypographyElement = 'h1' | 'h2' | 'h3' | 'p' | 'span' | 'strong';
+// Define los tipos permitidos para fontSize
+export type FontSize = 16 | 18 | 20 | 24 | 32;
 
+// Crear un atom persistente para almacenar el tamaño de la fuente en cookies
+export const fontSizeStore = persistentAtom<FontSize>('fontSize', 16, {
+  encode(value) {
+    return JSON.stringify(value);
+  },
+  decode(value) {
+    try {
+      return JSON.parse(value) as FontSize;
+    } catch (e) {
+      return 16; // Valor predeterminado en caso de error
+    }
+  },
+});
+
+fontSizeStore.subscribe((value) => {
+  const userPreferenceCookie = Cookies.get('userPreference');
+  let userPreference = { theme: 'light', fontSize: 16 }; // Valores por defecto
+
+  if (userPreferenceCookie) {
+    try {
+      userPreference = JSON.parse(userPreferenceCookie);
+    } catch (e) {
+      console.error('Error al parsear la cookie userPreference:', e);
+    }
+  }
+
+  userPreference.fontSize = value;
+  Cookies.set('userPreference', JSON.stringify(userPreference), { expires: 365 });
+});
+
+// Define las propiedades que el componente acepta
 interface TypographyProps {
-  as?: TypographyElement;
-  className?: string;
-  children: React.ReactNode;
+  initialFontSize: FontSize;
 }
 
-const Typography: React.FC<TypographyProps> = ({ as = 'p', className = '', children }) => {
-  const baseSize = useStore(fontSizeStore);
+const Typography = ({ initialFontSize }: TypographyProps) => {
+  // Inicializa el estado con el valor recibido como prop
+  const [fontSize, setFontSize] = useState<FontSize>(initialFontSize);
 
+  // Sincroniza el store con el valor inicial
   useEffect(() => {
-    console.log('Base size changed to:', baseSize);
-  }, [baseSize]); // Dependencia para que el efecto se ejecute cuando `baseSize` cambie
+    fontSizeStore.set(initialFontSize);
+  }, [initialFontSize]);
 
-  // Definir tamaños base en píxeles
-  const baseSizeInPixels = `${baseSize}px`;
-  const baseClasses = {
-    h1: {
-      fontSize: `${baseSize + 24}px`,
-      fontWeight: 'bold',
-    },
-    h2: {
-      fontSize: `${baseSize + 16}px`,
-      fontWeight: '600',
-    },
-    h3: {
-      fontSize: `${baseSize + 8}px`,
-      fontWeight: '500',
-    },
-    p: {
-      fontSize: baseSizeInPixels,
-    },
-    span: {
-      fontSize: `${baseSize - 4}px`,
-    },
-    strong: {
-      fontSize: baseSizeInPixels,
-      fontWeight: 'bold',
-    },
-  }[as || 'p']; // Fallback a párrafo si no se especifica
+  // Efecto secundario para actualizar la cookie cuando el valor cambia
+  useEffect(() => {
+    const unsubscribe = fontSizeStore.subscribe((value) => {
+      const userPreferenceCookie = Cookies.get('userPreference');
+      let userPreference = { theme: 'light', fontSize: 16 }; // Valores por defecto
 
-  // Aplicar el tamaño base global y las clases específicas
-  const Component = as;
+      if (userPreferenceCookie) {
+        try {
+          userPreference = JSON.parse(userPreferenceCookie);
+        } catch (e) {
+          console.error('Error al parsear la cookie userPreference:', e);
+        }
+      }
+
+      // Actualiza el tamaño de fuente en la cookie 'userPreference'
+      userPreference.fontSize = value;
+      Cookies.set('userPreference', JSON.stringify(userPreference), { expires: 365 });
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
-    <Component
-      className={className}
-      style={baseClasses} // Aplicar estilos en línea
-    >
-      {"el font-size actual es: " + baseSize}
-      {children}
-    </Component>
+    <div>
+      <h1>El font-size actual es: {fontSize}</h1>
+    </div>
   );
 };
 

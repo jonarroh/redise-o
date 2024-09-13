@@ -4,9 +4,21 @@ import Cookies from 'js-cookie';
 // Definir el tipo de tamaño de fuente permitido
 export type FontSize = 16 | 18 | 20 | 24 | 32;
 
-// Leer el tamaño de la fuente desde las cookies, si existe
-const storedFontSize = Cookies.get('fontSize');
-const initialFontSize: FontSize = storedFontSize ? JSON.parse(storedFontSize) : 16;
+// Leer la cookie 'userPreference' para obtener el tamaño de fuente
+const userPreferenceCookie = Cookies.get('userPreference');
+let initialFontSize: FontSize = 16;
+
+if (userPreferenceCookie) {
+  try {
+    const userPreference = JSON.parse(userPreferenceCookie);
+    // Verificar si el tamaño de fuente es válido
+    if ([16, 18, 20, 24, 32].includes(userPreference.fontSize)) {
+      initialFontSize = userPreference.fontSize;
+    }
+  } catch (e) {
+    console.error('Error al parsear la cookie userPreference:', e);
+  }
+}
 
 // Crear un atom persistente para almacenar el tamaño de la fuente en cookies
 export const fontSizeStore = persistentAtom<FontSize>('fontSize', initialFontSize, {
@@ -24,7 +36,20 @@ export const fontSizeStore = persistentAtom<FontSize>('fontSize', initialFontSiz
   },
 });
 
-// Efecto secundario para actualizar la cookie cuando el valor cambie
+// Efecto secundario para actualizar la cookie 'userPreference' cuando el valor cambie
 fontSizeStore.subscribe((value) => {
-  Cookies.set('fontSize', JSON.stringify(value), { expires: 365 });
+  const userPreferenceCookie = Cookies.get('userPreference');
+  let userPreference = { theme: 'light', fontSize: 16 }; // Valores por defecto
+
+  if (userPreferenceCookie) {
+    try {
+      userPreference = JSON.parse(userPreferenceCookie);
+    } catch (e) {
+      console.error('Error al parsear la cookie userPreference:', e);
+    }
+  }
+
+  // Actualizar el tamaño de fuente en la cookie 'userPreference'
+  userPreference.fontSize = value;
+  Cookies.set('userPreference', JSON.stringify(userPreference), { expires: 365 });
 });
